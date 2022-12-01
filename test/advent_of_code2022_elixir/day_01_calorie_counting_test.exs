@@ -21,10 +21,12 @@ defmodule AdventOfCode2022Elixir.Day01CalorieCountingTest do
   """
 
   test "fourth elf carries the most calories" do
-    assert parse(@example) == 24000
+    assert most_calories(@example) == 24000
+    assert most_calories(Input.raw(1)) == 69310
   end
 
-  test "part 1" do
-    assert parse(Input.raw(1)) == 69310
+  test "sum of calories of top three calorie carrying elves" do
+    assert top_n_sum(@example, 3) == 45000
+    assert top_n_sum(Input.raw(1), 3) == 206104
   end
 end
