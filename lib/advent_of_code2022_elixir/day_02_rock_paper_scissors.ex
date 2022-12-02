@@ -29,13 +29,27 @@ defmodule AdventOfCode2022Elixir.Day02RockPaperScissors do
   In this example, if you were to follow the strategy guide, you would get a total score of 15 (8 + 1 + 6).
 
   What would your total score be if everything goes exactly according to your strategy guide?
+
+  --- Part Two ---
+
+  The Elf finishes helping with the tent and sneaks back over to you. "Anyway, the second column says how the round needs to end: X means you need to lose, Y means you need to end the round in a draw, and Z means you need to win. Good luck!"
+
+  The total score is still calculated in the same way, but now you need to figure out what shape to choose so the round ends as indicated. The example above now goes like this:
+
+    In the first round, your opponent will choose Rock (A), and you need the round to end in a draw (Y), so you also choose Rock. This gives you a score of 1 + 3 = 4.
+    In the second round, your opponent will choose Paper (B), and you choose Rock so you lose (X) with a score of 1 + 0 = 1.
+    In the third round, you will defeat your opponent's Scissors with Rock for a score of 1 + 6 = 7.
+
+  Now that you're correctly decrypting the ultra top secret strategy guide, you would get a total score of 12.
+
+  Following the Elf's instructions for the second column, what would your total score e if everything goes exactly according to your strategy guide?
   """
-  def score(input) do
+  def score(input, strategy \\ :default) do
     input
     |> String.split("\n", trim: true)
     |> Enum.map(fn round ->
       [opponent, me] = String.split(round)
-      {shape, outcome} = evaluate_round(decrypt_other(opponent), decrypt_play(me))
+      {shape, outcome} = evaluate_round(decrypt_other(opponent), decrypt_strategy(strategy, me))
 
       score_round(shape, outcome)
     end)
@@ -46,6 +60,8 @@ defmodule AdventOfCode2022Elixir.Day02RockPaperScissors do
     score_shape(shape) + score_outcome(outcome)
   end
 
+  def evaluate_round(same, same), do: {same, :draw}
+
   def evaluate_round(:rock, :paper), do: {:paper, :win}
   def evaluate_round(:rock, :scissors), do: {:scissors, :loss}
 
@@ -55,7 +71,16 @@ defmodule AdventOfCode2022Elixir.Day02RockPaperScissors do
   def evaluate_round(:scissors, :rock), do: {:rock, :win}
   def evaluate_round(:scissors, :paper), do: {:paper, :loss}
 
-  def evaluate_round(same, same), do: {same, :draw}
+  def evaluate_round(shape, :draw), do: {shape, :draw}
+
+  def evaluate_round(:rock, :win), do: {:paper, :win}
+  def evaluate_round(:rock, :loss), do: {:scissors, :loss}
+
+  def evaluate_round(:paper, :win), do: {:scissors, :win}
+  def evaluate_round(:paper, :loss), do: {:rock, :loss}
+
+  def evaluate_round(:scissors, :win), do: {:rock, :win}
+  def evaluate_round(:scissors, :loss), do: {:paper, :loss}
 
   defp score_shape(:rock), do: 1
   defp score_shape(:paper), do: 2
@@ -69,7 +94,11 @@ defmodule AdventOfCode2022Elixir.Day02RockPaperScissors do
   defp decrypt_other("B"), do: :paper
   defp decrypt_other("C"), do: :scissors
 
-  defp decrypt_play("X"), do: :rock
-  defp decrypt_play("Y"), do: :paper
-  defp decrypt_play("Z"), do: :scissors
+  defp decrypt_strategy(:default, "X"), do: :rock
+  defp decrypt_strategy(:default, "Y"), do: :paper
+  defp decrypt_strategy(:default, "Z"), do: :scissors
+
+  defp decrypt_strategy(:elf, "X"), do: :loss
+  defp decrypt_strategy(:elf, "Y"), do: :draw
+  defp decrypt_strategy(:elf, "Z"), do: :win
 end

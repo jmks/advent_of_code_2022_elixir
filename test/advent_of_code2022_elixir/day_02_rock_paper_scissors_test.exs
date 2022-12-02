@@ -20,4 +20,18 @@ defmodule AdventOfCode2022Elixir.Day02RockPaperScissorsTest do
   test "part 1" do
     assert score(Input.raw(2)) == 13675
   end
+
+  describe "score/2" do
+    test "following elf's strategy" do
+      assert score("""
+      A Y
+      B X
+      C Z
+      """, :elf) == 12
+    end
+
+    test "part 2" do
+      assert score(Input.raw(2), :elf) == 14184
+    end
+  end
 end
