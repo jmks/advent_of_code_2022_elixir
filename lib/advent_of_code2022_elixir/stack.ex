@@ -22,6 +22,16 @@ defmodule AdventOfCode2022Elixir.Stack do
     %{stack | stack: [element | stack.stack]}
   end
 
+  def push_many(stack, elements, order)
+
+  def push_many(stack, elements, :stack) do
+    push(stack, elements)
+  end
+
+  def push_many(stack, elements, :preserve) do
+    push(stack, Enum.reverse(elements))
+  end
+
   def contents(stack) do
     Enum.join(stack.stack, "")
   end

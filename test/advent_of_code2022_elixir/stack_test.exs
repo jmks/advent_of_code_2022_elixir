@@ -18,12 +18,20 @@ defmodule AdventOfCode2022Elixir.StackTest do
       assert Stack.contents(s) == "cba"
     end
 
-    test "push many" do
+    test "push many in stack order" do
       s = Stack.new()
 
-      s = Stack.push(s, ["c", "b", "a"])
+      s = Stack.push_many(s, ["c", "b", "a"], :stack)
 
       assert Stack.contents(s) == "abc"
+    end
+
+    test "push many preserving order" do
+      s = Stack.new()
+
+      s = Stack.push_many(s, ["c", "b", "a"], :preserve)
+
+      assert Stack.contents(s) == "cba"
     end
 
     test "pop" do
