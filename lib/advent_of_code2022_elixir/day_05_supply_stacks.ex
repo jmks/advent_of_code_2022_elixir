@@ -56,7 +56,59 @@ defmodule AdventOfCode2022Elixir.Day05SupplyStacks do
   The Elves just need to know which crate will end up on top of each stack; in this example, the top crates are C in stack 1, M in stack 2, and Z in stack 3, so you should combine these together and give the Elves the message CMZ.
 
   After the rearrangement procedure completes, what crate ends up on top of each stack?
+
+
+  --- Part Two ---
+
+  As you watch the crane operator expertly rearrange the crates, you notice the process isn't following your prediction.
+
+  Some mud was covering the writing on the side of the crane, and you quickly wipe it away. The crane isn't a CrateMover 9000 - it's a CrateMover 9001.
+
+  The CrateMover 9001 is notable for many new and exciting features: air conditioning, leather seats, an extra cup holder, and the ability to pick up and move multiple crates at once.
+
+  Again considering the example above, the crates begin in the same configuration:
+
+      [D]
+  [N] [C]
+  [Z] [M] [P]
+   1   2   3
+
+  Moving a single crate from stack 2 to stack 1 behaves the same as before:
+
+  [D]
+  [N] [C]
+  [Z] [M] [P]
+   1   2   3
+
+  However, the action of moving three crates from stack 1 to stack 3 means that those three moved crates stay in the same order, resulting in this new configuration:
+
+         [D]
+         [N]
+     [C] [Z]
+     [M] [P]
+  1   2   3
+
+  Next, as both crates are moved from stack 2 to stack 1, they retain ther order as well:
+
+          [D]
+          [N]
+  [C]     [Z]
+  [M]     [P]
+   1   2   3
+
+  Finally, a single crate is still moved from stack 1 to stack 2, but now it's crate C that gets moved:
+
+          [D]
+          [N]
+          [Z]
+  [M] [C] [P]
+   1   2   3
+
+  In this example, the CrateMover 9001 has put the crates in a totally different order: MCD.
+
+  Before the rearrangement process finishes, update your simulation so that the Elves know where they should stand to be ready to unload the final supplies. After the rearrangement procedure completes, what crate ends up on top of each stack?
   """
+
   alias AdventOfCode2022Elixir.Stack
 
   def parse(input) do
@@ -68,29 +120,39 @@ defmodule AdventOfCode2022Elixir.Day05SupplyStacks do
     {parse_stacks(setup), parse_moves(moves)}
   end
 
-  def apply_moves({stacks_list, moves}) do
-    stacks = for {stack, offset} <- Enum.with_index(stacks_list, 1), into: %{}, do: {offset, stack}
+  def apply_moves({stacks_list, moves}, order \\ :stack) do
+    stacks =
+      for {stack, offset} <- Enum.with_index(stacks_list, 1), into: %{}, do: {offset, stack}
 
-    applied = Enum.reduce(moves, stacks, fn [count, source, destination], stacks ->
-      src = Map.fetch!(stacks, source)
-      {popped, new_src} = Stack.pop(src, count)
+    applied =
+      Enum.reduce(moves, stacks, fn [count, source, destination], stacks ->
+        src = Map.fetch!(stacks, source)
+        {popped, new_src} = Stack.pop(src, count)
 
-      new_dest =
+        new_dest =
+          stacks
+          |> Map.fetch!(destination)
+          |> Stack.push_many(popped, order)
+
         stacks
-        |> Map.fetch!(destination)
-        |> Stack.push(popped)
-
-      stacks
-      |> Map.put(source, new_src)
-      |> Map.put(destination, new_dest)
-    end)
+        |> Map.put(source, new_src)
+        |> Map.put(destination, new_dest)
+      end)
 
     for i <- 1..length(stacks_list), do: Map.fetch!(applied, i)
   end
 
-  def top_of_stacks(parsed) do
+  def top_of_stacks(parsed, :crane_mover_9000) do
+    do_top_of_stacks(parsed, :stack)
+  end
+
+  def top_of_stacks(parsed, :crane_mover_9001) do
+    do_top_of_stacks(parsed, :preserve)
+  end
+
+  defp do_top_of_stacks(parsed, multicrate_order) do
     parsed
-    |> apply_moves()
+    |> apply_moves(multicrate_order)
     |> Enum.map(&Stack.peek/1)
     |> Enum.join("")
   end
@@ -99,7 +161,7 @@ defmodule AdventOfCode2022Elixir.Day05SupplyStacks do
     [numbers | contents] = Enum.reverse(setup)
     count = numbers |> String.trim() |> String.last() |> String.to_integer()
 
-    stacks = for _ <- 1..count, do: Stack.new
+    stacks = for _ <- 1..count, do: Stack.new()
 
     contents
     |> Enum.map(&parse_stack_assignment/1)
@@ -112,7 +174,9 @@ defmodule AdventOfCode2022Elixir.Day05SupplyStacks do
     |> Enum.chunk_every(4)
     |> Enum.map(&Enum.join(&1, ""))
     |> Enum.map(fn
-      "    " -> nil
+      "    " ->
+        nil
+
       "[" <> rest ->
         String.first(rest)
     end)

@@ -57,8 +57,10 @@ defmodule AdventOfCode2022Elixir.Day05SupplyStacksTest do
   end
 
   test "top_of_stacks/2" do
-    assert top_of_stacks(parse(@example)) == "CMZ"
-    assert top_of_stacks(parse(Input.raw(5))) == "MQTPGLLDN"
+    assert top_of_stacks(parse(@example), :crane_mover_9000) == "CMZ"
+    assert top_of_stacks(parse(Input.raw(5)), :crane_mover_9000) == "MQTPGLLDN"
+    assert top_of_stacks(parse(@example), :crane_mover_9001) == "MCD"
+    assert top_of_stacks(parse(Input.raw(5)), :crane_mover_9001) == "LVZPSTTCZ"
   end
 
   defp stacks_contents(stacks) do
