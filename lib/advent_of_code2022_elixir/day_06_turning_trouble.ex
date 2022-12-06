@@ -32,23 +32,45 @@ defmodule AdventOfCode2022Elixir.Day06TurningTrouble do
   zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw: first marker after character 11
 
   How many characters need to be processed before the first start-of-packet marker is detected?
+
+  --- Part Two ---
+
+  Your device's communication system is correctly detecting packets, but still isn't working. It looks like it also needs to look for messages.
+
+  A start-of-message marker is just like a start-of-packet marker, except it consists of 14 distinct characters rather than 4.
+
+  Here are the first positions of start-of-message markers for all of the above examples:
+
+  mjqjpqmgbljsphdztnvjfqwrcgsmlb: first marker after character 19
+  bvwbjplbgvbhsrlpgdmjqwftvncz: first marker after character 23
+  nppdvjthqldpwncqszvftbrmjlhg: first marker after character 23
+  nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg: first marker after character 29
+  zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw: first marker after character 26
+
+  How many characters need to be processed before the first start-of-message marker is detected?
   """
   def chars_before_start_of_packet(datastream) do
-    {prefix, _start_of_packet, _rest} = next_start_of_packet(String.codepoints(datastream), [])
+    {prefix, _start_of_packet, _rest} = next_start(String.codepoints(datastream), [], 4)
 
     String.length(prefix)
   end
 
-  defp next_start_of_packet(rest, prefix) do
-    potential = prefix |> Enum.take(4) |> MapSet.new()
+  def chars_before_start_of_message(datastream) do
+    {prefix, _, _} = next_start(String.codepoints(datastream), [], 14)
 
-    if MapSet.size(potential) == 4 do
+    String.length(prefix)
+  end
+
+  defp next_start(rest, prefix, unique_chars) do
+    potential = prefix |> Enum.take(unique_chars) |> MapSet.new()
+
+    if MapSet.size(potential) == unique_chars do
       prefix_str = prefix |> Enum.reverse() |> Enum.join("")
-      rest_str = rest |> Enum.drop(4) |> Enum.join("")
+      rest_str = rest |> Enum.drop(unique_chars) |> Enum.join("")
 
-      {prefix_str, Enum.take(prefix, 4), rest_str}
+      {prefix_str, Enum.take(prefix, unique_chars), rest_str}
     else
-      next_start_of_packet(tl(rest), [hd(rest) | prefix])
+      next_start(tl(rest), [hd(rest) | prefix], unique_chars)
     end
   end
 end
