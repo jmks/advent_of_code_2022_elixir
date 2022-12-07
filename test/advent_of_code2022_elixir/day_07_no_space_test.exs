@@ -93,6 +93,11 @@ defmodule AdventOfCode2022Elixir.Day07NoSpaceTest do
 
   test "sum_dirs_under/1" do
     assert sum_dirs_under(@example) == 95437
-    assert sum_dirs_under(Input.raw(7)) == 1
+    assert sum_dirs_under(Input.raw(7)) == 919_137
+  end
+
+  test "deleted_directory_size/1" do
+    assert deleted_directory_size(@example) == 24_933_642
+    assert deleted_directory_size(Input.raw(7)) == 2_877_389
   end
 end

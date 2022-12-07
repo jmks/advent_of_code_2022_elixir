@@ -80,18 +80,51 @@ defmodule AdventOfCode2022Elixir.Day07NoSpace do
   To begin, find all of the directories with a total size of at most 100000, then calculate the sum of their total sizes. In the example above, these directories are a and e; the sum of their total sizes is 95437 (94853 + 584). (As in this example, this process can count files more than once!)
 
   Find all of the directories with a total size of at most 100000. What is the sum of the total sizes of those directories?
+
+  --- Part Two ---
+
+  Now, you're ready to choose a directory to delete.
+
+  The total disk space available to the filesystem is 70000000. To run the update, you need unused space of at least 30000000. You need to find a directory you can delete that will free up enough space to run the update.
+
+  In the example above, the total size of the outermost directory (and thus the total amount of used space) is 48381165; this means that the size of the unused space must currently be 21618835, which isn't quite the 30000000 required by the update. Therefore, the update still requires a directory with total size of at least 8381165 to be deleted before it can run.
+
+  To achieve this, you have the following options:
+
+    Delete directory e, which would increase unused space by 584.
+    Delete directory a, which would increase unused space by 94853.
+    Delete directory d, which would increase unused space by 24933642.
+    Delete directory /, which would increase unused space by 48381165.
+
+  Directories e and a are both too small; eleting them would not free up enough space. However, directories d and / are both big enough! Between these, choose the smallest: d, increasing unused space by 24933642.
+
+  Find the smallest directory that, if deleted, would free up enough space on the filesystem to run the update. What is the total size of that directory?
   """
 
   alias AdventOfCode2022Elixir.Stack
 
-  def sum_dirs_under(input, max_size \\ 100000) do
+  def sum_dirs_under(input, max_size \\ 100_000) do
     input
-    |> parse()
-    |> interpret()
     |> directory_sizes()
     |> Enum.filter(fn {_, size} -> size <= max_size end)
     |> Enum.map(fn {_, size} -> size end)
     |> Enum.sum()
+  end
+
+  def deleted_directory_size(input) do
+    total_size = 70_000_000
+    required_size = 30_000_000
+
+    dirs = directory_sizes(input)
+
+    {"/", current_size} = List.last(dirs)
+    free_size = total_size - current_size
+    delete_size = required_size - free_size
+
+    dirs
+    |> Enum.filter(fn {_dir, size} -> size >= delete_size end)
+    |> List.first()
+    |> elem(1)
   end
 
   def parse(input) do
@@ -104,6 +137,13 @@ defmodule AdventOfCode2022Elixir.Day07NoSpace do
     path = Stack.new()
 
     do_interpret(instructions, path, [])
+  end
+
+  def directory_sizes(input) when is_binary(input) do
+    input
+    |> parse()
+    |> interpret()
+    |> directory_sizes()
   end
 
   def directory_sizes(files) do
@@ -174,6 +214,7 @@ defmodule AdventOfCode2022Elixir.Day07NoSpace do
 
   def all_dirs(path) do
     parts = path |> Path.dirname() |> String.split("/", trim: true)
+
     dirs =
       if length(parts) == 0 do
         []
