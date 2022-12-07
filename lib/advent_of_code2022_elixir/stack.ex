@@ -32,8 +32,12 @@ defmodule AdventOfCode2022Elixir.Stack do
     push(stack, Enum.reverse(elements))
   end
 
-  def contents(stack) do
-    Enum.join(stack.stack, "")
+  def contents(stack, delimiter \\ "") do
+    Enum.join(stack.stack, delimiter)
+  end
+
+  def to_list(stack) do
+    stack.stack
   end
 
   def peek(stack) do
