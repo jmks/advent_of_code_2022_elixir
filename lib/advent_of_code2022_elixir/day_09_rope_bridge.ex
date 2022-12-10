@@ -699,14 +699,18 @@ defmodule AdventOfCode2022Elixir.Day09RopeBridge do
     def move(rope, _direction, 0), do: rope
 
     def move(rope, direction, distance) do
-      {new_segments, new_tail} =
-        do_move(
-          rope.segments,
-          direction,
-          distance,
-          []
-        )
-      new_tail_positions = MapSet.put(rope.tail_positions, new_tail)
+      [head | rest] = rope.segments
+
+      new_head = move_head(head, direction)
+      tail_to_head =
+        Enum.reduce(rest, [new_head], fn tail, [head | moved] ->
+          new_tail = maybe_move_tail(head, tail)
+
+          [new_tail, head | moved]
+        end)
+
+      new_segments = Enum.reverse(tail_to_head)
+      new_tail_positions = MapSet.put(rope.tail_positions, hd(tail_to_head))
       new_rope = %{rope | segments: new_segments, tail_positions: new_tail_positions}
 
       move(new_rope, direction, distance - 1)
@@ -719,26 +723,6 @@ defmodule AdventOfCode2022Elixir.Day09RopeBridge do
 
     def unique_tail_positions(rope) do
       MapSet.size(rope.tail_positions)
-    end
-
-    defp do_move(segments, direction, distance, moved)
-
-    defp do_move([tail], _direction, _distance, moved) do
-      new_segments = Enum.reverse([tail | moved])
-
-      {new_segments, tail}
-    end
-
-    defp do_move([head, tail | rest], direction, distance, moved) do
-      new_head = move_head(head, direction)
-      new_tail = maybe_move_tail(new_head, tail)
-
-      do_move(
-        [new_tail | rest],
-        direction,
-        distance - 1,
-        [new_head | moved]
-      )
     end
 
     defp move_head(head, direction) do
