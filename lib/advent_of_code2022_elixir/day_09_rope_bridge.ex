@@ -684,25 +684,32 @@ defmodule AdventOfCode2022Elixir.Day09RopeBridge do
   Simulate your complete series of motions on a larger rope with ten knots. How many positions does the tail of the rope visit at least once?
   """
   defmodule Rope do
-    defstruct [:head, :tail, :tail_positions]
+    # defstruct [:head, :tail, :tail_positions]
+    defstruct [:segments, :tail_positions]
 
-    def new(origin \\ {0, 0}) do
+    @origin {0, 0}
+
+    def new(segments \\ 2) do
       %__MODULE__{
-        head: origin,
-        tail: origin,
-        tail_positions: MapSet.new([origin])
+        segments: List.duplicate(@origin, segments),
+        tail_positions: MapSet.new([@origin])
       }
     end
 
     def move(rope, _direction, 0), do: rope
 
     def move(rope, direction, distance) do
-      delta = direction_delta(direction)
+      {new_segments, new_tail} =
+        do_move(
+          rope.segments,
+          direction,
+          distance,
+          []
+        )
+      new_tail_positions = MapSet.put(rope.tail_positions, new_tail)
+      new_rope = %{rope | segments: new_segments, tail_positions: new_tail_positions}
 
-      rope
-      |> move_head(delta)
-      |> maybe_move_tail()
-      |> move(direction, distance - 1)
+      move(new_rope, direction, distance - 1)
     end
 
     def direction_delta(:right), do: {1, 0}
@@ -714,26 +721,40 @@ defmodule AdventOfCode2022Elixir.Day09RopeBridge do
       MapSet.size(rope.tail_positions)
     end
 
-    defp move_head(rope, delta) do
-      %{rope | head: add(rope.head, delta)}
+    defp do_move(segments, direction, distance, moved)
+
+    defp do_move([tail], _direction, _distance, moved) do
+      new_segments = Enum.reverse([tail | moved])
+
+      {new_segments, tail}
     end
 
-    defp maybe_move_tail(rope) do
-      {hx, hy} = rope.head
-      {tx, ty} = rope.tail
+    defp do_move([head, tail | rest], direction, distance, moved) do
+      new_head = move_head(head, direction)
+      new_tail = maybe_move_tail(new_head, tail)
 
-      if abs(hx - tx) >= 2 or abs(hy - ty) >= 2 do
-        move_tail(rope)
+      do_move(
+        [new_tail | rest],
+        direction,
+        distance - 1,
+        [new_head | moved]
+      )
+    end
+
+    defp move_head(head, direction) do
+      add(head, direction_delta(direction))
+    end
+
+    defp maybe_move_tail(head, tail) do
+      if head_too_far_away?(head, tail) do
+        add(tail, vector(head, tail))
       else
-        rope
+        tail
       end
     end
 
-    defp move_tail(rope) do
-      new_tail = add(rope.tail, vector(rope.head, rope.tail))
-      new_positions = MapSet.put(rope.tail_positions, new_tail)
-
-      %{rope | tail: new_tail, tail_positions: new_positions}
+    defp head_too_far_away?({hx, hy}, {tx, ty}) do
+      abs(hx - tx) >= 2 or abs(hy - ty) >= 2
     end
 
     defp vector({x1, y1}, {x2, y2}) do
@@ -748,8 +769,8 @@ defmodule AdventOfCode2022Elixir.Day09RopeBridge do
     end
   end
 
-  def unique_tail_positions(input) do
-    rope = Rope.new
+  def unique_tail_positions(input, segments \\ 2) do
+    rope = Rope.new(segments)
 
     input
     |> parse()
@@ -763,10 +784,10 @@ defmodule AdventOfCode2022Elixir.Day09RopeBridge do
     |> Enum.map(&parse_line/1)
   end
 
-  defp parse_line("R "<> d), do: {:right, String.to_integer(d)}
-  defp parse_line("L "<> d), do: {:left, String.to_integer(d)}
-  defp parse_line("D "<> d), do: {:down, String.to_integer(d)}
-  defp parse_line("U "<> d), do: {:up, String.to_integer(d)}
+  defp parse_line("R " <> d), do: {:right, String.to_integer(d)}
+  defp parse_line("L " <> d), do: {:left, String.to_integer(d)}
+  defp parse_line("D " <> d), do: {:down, String.to_integer(d)}
+  defp parse_line("U " <> d), do: {:up, String.to_integer(d)}
 
   defp move({direction, distance}, rope), do: Rope.move(rope, direction, distance)
 end
