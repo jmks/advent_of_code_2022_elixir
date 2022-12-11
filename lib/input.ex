@@ -1,6 +1,10 @@
 defmodule Input do
+  def raw(day) when is_integer(day) do
+    day |> Integer.to_string |> raw()
+  end
+
   def raw(day) do
-    filename = day |> Integer.to_string |> String.pad_leading(2, "0")
+    filename = String.pad_leading(day, 2, "0")
 
     File.read!("lib/data/#{filename}")
   end
