@@ -221,9 +221,16 @@ defmodule AdventOfCode2022Elixir.Day11MonkeyInTheMiddle do
   n
   """
   defmodule Monkey do
-    defstruct [:number, :items, :operation, :test, true, false, :total_inspections]
+    defstruct [:number, :items, :operation, :test, true, false, :total_inspections, :worry_fun]
 
-    def new(number, operation, test, if_true, if_false) do
+    def new(
+          number,
+          operation,
+          test,
+          if_true,
+          if_false,
+          worry_fun \\ fn worry -> div(worry, 3) end
+        ) do
       %__MODULE__{
         number: number,
         items: [],
@@ -231,11 +238,15 @@ defmodule AdventOfCode2022Elixir.Day11MonkeyInTheMiddle do
         test: test,
         true: if_true,
         false: if_false,
-        total_inspections: 0
+        total_inspections: 0,
+        worry_fun: worry_fun
       }
     end
 
-    def parse([title, items, operation, test, if_true, if_false]) do
+    def parse(
+          [title, items, operation, test, if_true, if_false],
+          worry_fun \\ fn worry -> div(worry, 3) end
+        ) do
       %__MODULE__{
         number:
           String.trim(title, ":") |> String.split(" ") |> List.last() |> String.to_integer(),
@@ -248,13 +259,14 @@ defmodule AdventOfCode2022Elixir.Day11MonkeyInTheMiddle do
         test: {:div, String.split(test, "divisible by ") |> List.last() |> String.to_integer()},
         true: parse_throw_to_monkey(if_true),
         false: parse_throw_to_monkey(if_false),
-        total_inspections: 0
+        total_inspections: 0,
+        worry_fun: worry_fun
       }
     end
 
     def process(monkey, original_worry_level) do
       worry_level = operate(monkey.operation, original_worry_level)
-      worry_level = div(worry_level, 3)
+      worry_level = monkey.worry_fun.(worry_level)
 
       receiver = if test(monkey.test, worry_level), do: monkey.true, else: monkey.false
 
@@ -284,18 +296,18 @@ defmodule AdventOfCode2022Elixir.Day11MonkeyInTheMiddle do
     defp operate({:add, :old, addend}, value), do: value + addend
   end
 
-  def parse(input) do
+  def parse(input, worry_fun \\ fn worry -> div(worry, 3) end) do
     input
     |> String.split("\n", trim: true)
     # a Monkey has 6 attributes
     |> Enum.chunk_every(6)
-    |> Enum.map(&Monkey.parse/1)
+    |> Enum.map(&Monkey.parse(&1, worry_fun))
     |> Enum.sort_by(fn monkey -> monkey.number end)
   end
 
-  def monkey_business(input) do
+  def monkey_business(input, worry_fun \\ fn worry -> div(worry, 3) end) do
     input
-    |> parse()
+    |> parse(worry_fun)
     |> round(20)
     |> Enum.map(& &1.total_inspections)
     |> Enum.sort(:desc)
