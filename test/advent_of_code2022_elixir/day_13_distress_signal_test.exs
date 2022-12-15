@@ -58,4 +58,15 @@ defmodule AdventOfCode2022Elixir.Day13DistressSignalTest do
     assert index_sum_of_right_order(@example) == 13
     assert index_sum_of_right_order(Input.raw(13)) == 5252
   end
+
+  test "compare/2" do
+    assert compare([1, 1, 3, 1, 1], [1, 1, 5, 1, 1]) == :lt
+    assert compare([1, 1, 5, 1, 1], [1, 1, 3, 1, 1]) == :gt
+    assert compare([1, 2, 3], [1, 2, 3]) == :eq
+  end
+
+  test "decoder_key/1" do
+    assert decoder_key(@example) == 140
+    assert decoder_key(Input.raw(13)) == 20592
+  end
 end
