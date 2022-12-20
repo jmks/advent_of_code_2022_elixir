@@ -65,6 +65,10 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoirTest do
 
     test "fill_with_sand/2" do
       assert @example |> Cave.parse() |> Cave.fill_with_sand(:block_source) == 93
+    end
+
+    @tag :slow
+    test "part 2" do
       assert Input.raw(14) |> Cave.parse() |> Cave.fill_with_sand(:block_source) == 24166
     end
   end
