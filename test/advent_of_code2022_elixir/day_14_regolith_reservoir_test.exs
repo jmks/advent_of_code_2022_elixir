@@ -40,26 +40,32 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoirTest do
     test "draw/1" do
       drawing = Cave.parse(@example) |> Cave.draw()
 
-      expected = """
-      ......+...
-      ..........
-      ..........
-      ..........
-      ....#...##
-      ....#...#.
-      ..###...#.
-      ........#.
-      ........#.
-      #########.
-      """ |> String.trim()
+      expected =
+        """
+        ......+...
+        ..........
+        ..........
+        ..........
+        ....#...##
+        ....#...#.
+        ..###...#.
+        ........#.
+        ........#.
+        #########.
+        """
+        |> String.trim()
 
       assert drawing == expected
     end
 
-    @tag timeout: :infinity
     test "fill_with_sand/1" do
       assert @example |> Cave.parse() |> Cave.fill_with_sand() == 24
       assert Input.raw(14) |> Cave.parse() |> Cave.fill_with_sand() == 793
+    end
+
+    test "fill_with_sand/2" do
+      assert @example |> Cave.parse() |> Cave.fill_with_sand(:block_source) == 93
+      assert Input.raw(14) |> Cave.parse() |> Cave.fill_with_sand(:block_source) == 24166
     end
   end
 end

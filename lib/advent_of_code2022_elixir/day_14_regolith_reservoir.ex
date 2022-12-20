@@ -121,8 +121,45 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoir do
   ~..........
 
   Using your scan, simulate the falling sand. How many units of sand come to rest before sand starts flowing into the abyss below?
-  """
 
+  --- Part Two ---
+
+  You realize you misread the scan. There isn't an endless void at the bottom of the scan - there's floor, and you're standing on it!
+
+  You don't have time to scan the floor, so assume the floor is an infinite horizontal line with a y coordinate equal to two plus the highest y coordinate of any point in your scan.
+
+  In the example above, the highest y coordinate of any point is 9, and so the floor is at y=11. (This is as if your scan contained one extra rock path like -infinity,11 -> infinity,11.) With the added floor, the example above now looks like this:
+
+        ...........+........
+        ....................
+        ....................
+        ....................
+        .........#...##.....
+        .........#...#......
+        .......###...#......
+        .............#......
+        .............#......
+        .....#########......
+        ....................
+  <-- etc #################### etc -->
+
+  To find somewhere safe to stand, you'll need to simulate falling sand until a unit of snd comes to rest at 500,0, blocking the source entirely and stopping the flow of sand into the cave. In the example above, the situation finally looks like this after 93 units of sand come to rest:
+
+  ............o............
+  ...........ooo...........
+  ..........ooooo..........
+  .........ooooooo.........
+  ........oo#ooo##o........
+  .......ooo#ooo#ooo.......
+  ......oo###ooo#oooo......
+  .....oooo.oooo#ooooo.....
+  ....oooooooooo#oooooo....
+  ...ooo#########ooooooo...
+  ..ooooo.......ooooooooo..
+  #########################
+
+  Using your scan, simulate the falling sand until the source of the sand becomes blocked. How many units of sand come to rest?
+  """
   defmodule Cave do
     defstruct [:rocks, :sand, :deepest_rock]
 
@@ -149,7 +186,11 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoir do
         end)
         |> Enum.into(%{})
 
-      %__MODULE__{rocks: MapSet.new(rocks), sand: MapSet.new(), deepest_rock: deepest_rock}
+      %__MODULE__{
+        rocks: MapSet.new(rocks),
+        sand: MapSet.new(),
+        deepest_rock: deepest_rock
+      }
     end
 
     def draw(cave) do
@@ -162,13 +203,37 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoir do
       draw(cave, minmax_x, minmax_y)
     end
 
-    def fill_with_sand(cave) do
+    # Strategies:
+    #  :bottomless -> until a sand falls into the bottomless void
+    #  :block_source -> until a sand comes to rest at the source coordinate
+    def fill_with_sand(cave, strategy \\ :bottomless)
+
+    def fill_with_sand(cave, :bottomless) do
       case place(cave, @source) do
-        {:bottomless_pit, new_cave} ->
+        {:bottomless_void, _placement, new_cave} ->
           MapSet.size(new_cave.sand)
 
-        {:placed, new_cave} ->
+        {:placed, _placement, new_cave} ->
           fill_with_sand(new_cave)
+      end
+    end
+
+    def fill_with_sand(cave, :block_source) do
+      lowest_object = Enum.map(cave.deepest_rock, fn {_, y} -> y end) |> Enum.max()
+      max_depth = lowest_object + 1
+
+      case place(cave, @source, max_depth) do
+        {:placed, @source, new_cave} ->
+          MapSet.size(new_cave.sand)
+
+        {:placed, _placement, new_cave} ->
+          fill_with_sand(new_cave, :block_source)
+
+        {:bottomless_void, placed, new_cave} ->
+          IO.puts(":block_source reached a bottomless pit at #{inspect placed}")
+          IO.puts(Cave.draw(new_cave))
+
+          MapSet.size(new_cave.sand)
       end
     end
 
@@ -214,31 +279,27 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoir do
       |> Enum.join("\n")
     end
 
-    defp place(cave, sand) do
-      case place_sand(cave, sand) do
-        {:at_rest, placement} ->
-          new_sand = MapSet.put(cave.sand, placement)
-          new_cave = %{cave | sand: new_sand}
-
-          {:placed, new_cave}
-
-        :bottomless_pit ->
-          {:bottomless_pit, cave}
-      end
-    end
-
-    defp place_sand(cave, sand) do
-      new_sand = next_sand_step(cave, sand)
+    defp place(cave, position, max_depth \\ :infinity) do
+      next_position = next_sand_step(cave, position)
 
       cond do
-        new_sand == :at_rest ->
-          {:at_rest, sand}
+        next_position == :at_rest ->
+          new_sand = MapSet.put(cave.sand, position)
+          new_cave = %{cave | sand: new_sand}
 
-        falling_into_bottomless_pit?(cave, new_sand) ->
-          :bottomless_pit
+          {:placed, position, new_cave}
+
+        max_depth == :infinity and falling_into_bottomless_void?(cave, next_position) ->
+          {:bottomless_void, next_position, cave}
+
+        elem(next_position, 1) == max_depth ->
+          new_sand = MapSet.put(cave.sand, next_position)
+          new_cave = %{cave | sand: new_sand}
+
+          {:placed, next_position, new_cave}
 
         true ->
-          place_sand(cave, new_sand)
+          place(cave, next_position, max_depth)
       end
     end
 
@@ -254,7 +315,7 @@ defmodule AdventOfCode2022Elixir.Day14RegolithReservoir do
       |> List.first(:at_rest)
     end
 
-    defp falling_into_bottomless_pit?(cave, {x, y}) do
+    defp falling_into_bottomless_void?(cave, {x, y}) do
       y >= Map.get(cave.deepest_rock, x, -1)
     end
   end
