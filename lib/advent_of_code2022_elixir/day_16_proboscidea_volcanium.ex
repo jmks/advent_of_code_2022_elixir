@@ -163,6 +163,7 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
     defstruct [
       :graph,
       :current_valve,
+      :initial_minutes,
       :minutes_remaining,
       :opened,
       :history,
@@ -170,11 +171,12 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
       :pending_actions
     ]
 
-    def new(graph, initial_valve \\ "AA") do
+    def new(graph, initial_valve \\ "AA", minutes \\ 30) do
       %__MODULE__{
         graph: graph,
         current_valve: Map.fetch!(graph, initial_valve),
-        minutes_remaining: 30,
+        initial_minutes: minutes,
+        minutes_remaining: minutes,
         opened: MapSet.new(),
         history: [],
         pressure_released: 0,
@@ -264,7 +266,7 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
         end)
         |> Enum.sum()
 
-      historical_record = {:pressure_released, new_pressure, 30 - state.minutes_remaining}
+      historical_record = {:pressure_released, new_pressure, state.initial_minutes - state.minutes_remaining}
 
       struct!(state,
         pressure_released: state.pressure_released + new_pressure,
@@ -349,7 +351,6 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
          [%State{minutes_remaining: 0} = state | rest],
          {total, _} = best
        ) do
-
     if state.pressure_released > total do
       do_maximum_pressure_released(
         rest,
@@ -365,6 +366,7 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
       do_maximum_pressure_released([State.perform_pending_action(state) | rest], best)
     else
       actions = State.next_actions(state)
+
       new_states =
         actions
         |> Enum.map(&State.perform_action(state, &1))
