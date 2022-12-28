@@ -184,10 +184,6 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
       }
     end
 
-    def current_open?(state) do
-      MapSet.member?(state.opened, state.current_valve.name)
-    end
-
     def perform_action(state, {:move, valve}) do
       state
       |> tick()
