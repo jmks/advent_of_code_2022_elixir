@@ -253,16 +253,21 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
       length(state.pending_actions) > 0
     end
 
+    def current_pressure(state) do
+      state.opened
+      |> Enum.map(fn valve ->
+        v = Map.fetch!(state.graph, valve)
+        v.rate
+      end)
+      |> Enum.sum()
+    end
+
     defp update_pressure(state) do
       # TODO: Could aggregate this into per minute total
-      new_pressure =
-        Enum.map(state.opened, fn valve ->
-          v = Map.fetch!(state.graph, valve)
-          v.rate
-        end)
-        |> Enum.sum()
+      new_pressure = current_pressure(state)
 
-      historical_record = {:pressure_released, new_pressure, state.initial_minutes - state.minutes_remaining}
+      historical_record =
+        {:pressure_released, new_pressure, state.initial_minutes - state.minutes_remaining}
 
       struct!(state,
         pressure_released: state.pressure_released + new_pressure,
