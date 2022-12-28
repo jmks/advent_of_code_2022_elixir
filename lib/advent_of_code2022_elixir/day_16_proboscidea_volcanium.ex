@@ -296,8 +296,7 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
     end
 
     defp shortest_path(graph, start, destination) do
-      q = :queue.new()
-      q = :queue.in([start], q)
+      q = :queue.from_list([[start]])
 
       do_shortest_path(graph, destination, q)
     end
@@ -371,7 +370,7 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
       new_states =
         actions
         |> Enum.map(&State.perform_action(state, &1))
-        |> Enum.filter(fn state -> best_possible(state) > high end)
+        |> Enum.filter(fn state -> theoretical_best(state) > high end)
 
       do_maximum_pressure_released(new_states ++ rest, best)
     end
@@ -379,9 +378,38 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcanium do
 
   # To prune results, we'll assume at this timestamp, all closed valves are magically opened.
   # With all the valves opened, we can drop this path if it can not exceed the best-so-far.
-  defp best_possible(state) do
+  def theoretical_best(state) do
     total_rate = Enum.reduce(state.graph, 0, fn {_name, valve}, sum -> valve.rate + sum end)
 
     state.pressure_released + state.minutes_remaining * total_rate
+  end
+
+  # Expected value of an action.
+  # 1. How much pressure will the current state release
+  # 2. Perform the action
+  # 3. How much will the state release now
+  # 4. Divide difference of (3) - (1) by minutes to perform (2)
+  def expected_value(_state, :noop), do: 0
+  def expected_value(_state, {:move, _}), do: 0
+  def expected_value(state, open_or_goto) do
+    current = State.current_pressure(state) * state.minutes_remaining
+
+    after_actions =
+      state
+      |> State.perform_action(open_or_goto)
+      |> perform_pending_actions()
+    expected = State.current_pressure(after_actions) * after_actions.minutes_remaining
+
+    (expected - current) / (state.minutes_remaining - after_actions.minutes_remaining)
+  end
+
+  defp perform_pending_actions(state) do
+    if State.pending_action?(state) do
+      state
+      |> State.perform_pending_action()
+      |> perform_pending_actions()
+    else
+      state
+    end
   end
 end

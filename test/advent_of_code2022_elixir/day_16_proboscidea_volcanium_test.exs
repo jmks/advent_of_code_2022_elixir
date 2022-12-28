@@ -131,6 +131,57 @@ defmodule AdventOfCode2022Elixir.Day16ProboscideaVolcaniumTest do
     assert maximum_pressure_released(@example) == 1651
   end
 
+  describe "theoretical_best/1" do
+    setup do
+      graph = %{
+        "AA" => Valve.new("AA", 1, ["BB"]),
+        "BB" => Valve.new("BB", 2, ["AA"])
+      }
+
+      state = State.new(graph)
+
+      %{state: state}
+    end
+
+    test "no open valves", %{state: state} do
+      assert theoretical_best(state) == (1 + 2) * 30
+    end
+
+    test "with open valve", %{state: state} do
+      state = State.perform_action(state, {:open, "AA"})
+      state = Enum.reduce(1..9, state, fn _, s -> State.perform_action(s, :noop) end)
+
+      assert theoretical_best(state) == 9 + 20 * (1 + 2)
+    end
+  end
+
+  describe "expected_value/1" do
+    setup do
+      graph = %{
+        "AA" => Valve.new("AA", 1, ["BB"]),
+        "BB" => Valve.new("BB", 2, ["AA"])
+      }
+
+      state = State.new(graph)
+
+      %{state: state}
+    end
+
+    test "ev of noop is 0", %{state: state} do
+      assert expected_value(state, :noop) == 0
+    end
+
+    test "ev of a move is 0", %{state: state} do
+      assert expected_value(state, {:move, "BB"}) == 0
+    end
+
+    test "ev of opening a valve is the total pressure gained divided over minutes to perform action", %{state: state} do
+      assert expected_value(state, {:open, "AA"}) == 1 * 29
+      assert expected_value(state, {:goto, "BB"}) == (2 * 28) / 2
+      assert state |> State.perform_action({:open, "AA"}) |> expected_value({:goto, "BB"}) == (2 * 26) / 2
+    end
+  end
+
   @tag :slow
   test "part 1" do
     assert maximum_pressure_released(Input.raw(16)) == 1659
