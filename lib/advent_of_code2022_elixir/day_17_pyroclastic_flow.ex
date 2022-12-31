@@ -406,6 +406,37 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlow do
     end
   end
 
+  defmodule Jets do
+    defstruct [:patterns, :stream]
+
+    def parse(input) do
+      patterns =
+        input
+        |> String.trim()
+        |> String.graphemes()
+        |> Enum.map(fn
+          ">" -> {:right, ">"}
+          "<" -> {:left, "<"}
+        end)
+
+      %__MODULE__{patterns: patterns, stream: patterns}
+    end
+
+    def next(%__MODULE__{stream: [], patterns: [{head, _} | tail]} = jets) do
+      {head, struct!(jets, stream: tail)}
+    end
+
+    def next(%__MODULE__{stream: [{head, _} | tail]} = jets) do
+      {head, struct!(jets, stream: tail)}
+    end
+
+    def current_pattern(jets) do
+      jets.stream
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.join("")
+    end
+  end
+
   defmodule Chamber do
     defstruct [:coordinates, :max_h, :next_rock]
 
@@ -457,43 +488,31 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlow do
     defp next(:square), do: :hbar
   end
 
-  def parse_jet_patterns(input) do
-    input
-    |> String.trim()
-    |> String.graphemes()
-    |> Enum.map(fn
-      ">" -> :right
-      "<" -> :left
-    end)
-  end
-
   def place_rocks(jets, rocks) do
     chamber = Chamber.new()
 
-    do_place_rocks(chamber, jets, jets, rocks)
+    do_place_rocks(chamber, jets, rocks)
   end
 
-  defp do_place_rocks(chamber, _all_jets, _jets, 0), do: chamber
+  defp do_place_rocks(chamber, _jets, 0), do: chamber
 
-  defp do_place_rocks(chamber, all_jets, jets, rocks) do
+  defp do_place_rocks(chamber, jets, rocks) do
     {new_chamber, rock} = Chamber.next_rock(chamber)
 
-    {new_chamber, new_jets} = fall(rock, new_chamber, all_jets, jets)
+    {new_chamber, new_jets} = fall(rock, new_chamber, jets)
 
-    do_place_rocks(new_chamber, all_jets, new_jets, rocks - 1)
+    do_place_rocks(new_chamber, new_jets, rocks - 1)
   end
 
-  defp fall(rock, chamber, all_jets, jets)
+  defp fall(rock, chamber, jets) do
+    {direction, new_jets} = Jets.next(jets)
 
-  defp fall(rock, chamber, all_jets, []), do: fall(rock, chamber, all_jets, all_jets)
-
-  defp fall(rock, chamber, all_jets, [jet | rest]) do
-    case move(rock, jet, chamber) do
+    case move(rock, direction, chamber) do
       {:ok, new_rock} ->
-        fall(new_rock, chamber, all_jets, rest)
+        fall(new_rock, chamber, new_jets)
 
       {:stopped, at_rest} ->
-        {Chamber.place(chamber, at_rest), rest}
+        {Chamber.place(chamber, at_rest), new_jets}
     end
   end
 
@@ -510,7 +529,7 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlow do
     end
   end
 
-  def draw(chamber, moving \\ MapSet.new) do
+  def draw(chamber, moving \\ MapSet.new()) do
     height = Enum.max([Chamber.rock_tower_height(chamber) | Enum.map(moving, &elem(&1, 1))])
 
     height..0//-1

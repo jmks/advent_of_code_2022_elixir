@@ -3,7 +3,7 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlowTest do
 
   import AdventOfCode2022Elixir.Day17PyroclasticFlow
 
-  alias AdventOfCode2022Elixir.Day17PyroclasticFlow.{Chamber, Rock}
+  alias AdventOfCode2022Elixir.Day17PyroclasticFlow.{Chamber, Jets, Rock}
 
   describe "Chamber" do
     test "new_starting_coordinate/1" do
@@ -45,8 +45,10 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlowTest do
     end
   end
 
-  test "parse_jet_patterns/1" do
-    assert parse_jet_patterns(">>><<><") == [
+  test "Jets.parse/1" do
+    jets = Jets.parse(">>><<><")
+
+    assert Enum.map(jets.patterns, &elem(&1, 0)) == [
              :right,
              :right,
              :right,
@@ -59,7 +61,7 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlowTest do
 
   describe "place_rocks/2" do
     @example ">>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"
-    @jets parse_jet_patterns(@example)
+    @jets Jets.parse(@example)
 
     test "single piece falls to cave floor" do
       chamber = place_rocks(@jets, 1)
@@ -90,7 +92,7 @@ defmodule AdventOfCode2022Elixir.Day17PyroclasticFlowTest do
     end
 
     test "part 1" do
-      chamber = place_rocks(parse_jet_patterns(Input.raw(17)), 2022)
+      chamber = place_rocks(Jets.parse(Input.raw(17)), 2022)
 
       assert Chamber.rock_tower_height(chamber) == 3209
     end
