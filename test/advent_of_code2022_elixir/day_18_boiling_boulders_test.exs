@@ -41,4 +41,10 @@ defmodule AdventOfCode2022Elixir.Day18BoilingBouldersTest do
       assert sides(Input.raw(18)) == 4628
     end
   end
+
+  describe "exposed_sides/1" do
+    test "example" do
+      assert exposed_sides(@example) == 58
+    end
+  end
 end

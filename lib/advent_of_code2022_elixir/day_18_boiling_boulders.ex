@@ -32,6 +32,15 @@ defmodule AdventOfCode2022Elixir.Day18BoilingBoulders do
 
   What is the surface area of your scanned lava droplet?
 
+  --- Part Two ---
+
+  Something seems off about your calculation. The cooling rate depends on exterior surface area, but your calculation also included the surface area of air pockets trapped in the lava droplet.
+
+  Instead, consider only cube sides that could be reached by the water and steam as the lava droplet tumbles into the pond. The steam will expand to reach as much as possible, completely displacing any air on the outside of the lava droplet but never expanding diagonally.
+
+  In the larger example above, exactly one cube of air is trapped within the lava droplet (at 2,2,5), so the exterior surface area of the lava droplet is 58.
+
+  What is the exterior surface area of your scanned lava droplet?
   """
   def parse(input) do
     input
@@ -45,6 +54,12 @@ defmodule AdventOfCode2022Elixir.Day18BoilingBoulders do
     lava = parse(input)
 
     count_sides(lava, MapSet.new(lava))
+  end
+
+  def exposed_sides(input) do
+    lava = parse(input)
+
+    count_exposed_sides(lava, MapSet.new(lava))
   end
 
   defp count_sides(lavas, set) do
@@ -65,7 +80,53 @@ defmodule AdventOfCode2022Elixir.Day18BoilingBoulders do
       {x, y + 1, z},
       {x, y - 1, z},
       {x, y, z + 1},
-      {x, y, z - 1},
+      {x, y, z - 1}
     ]
   end
+
+  def count_exposed_sides(lavas, set) do
+    {minx, maxx} = lavas |> Enum.map(&project(:x, &1)) |> Enum.min_max()
+    {miny, maxy} = lavas |> Enum.map(&project(:y, &1)) |> Enum.min_max()
+    {minz, maxz} = lavas |> Enum.map(&project(:z, &1)) |> Enum.min_max()
+
+    min = {minx, miny, minz}
+    max = {maxx, maxy, maxz}
+
+    lavas
+    |> Enum.map(fn lava ->
+      exposed = Enum.count(vectors(), &exposed?(&1, add_vector(&1, lava), set, min, max))
+
+      6 - exposed
+    end)
+    |> Enum.sum()
+  end
+
+  defp project(:x, {x, _, _}), do: x
+  defp project(:y, {_, y, _}), do: y
+  defp project(:z, {_, _, z}), do: z
+
+  defp vectors do
+    [
+      {:x, 1},
+      {:x, -1},
+      {:y, 1},
+      {:y, -1},
+      {:z, 1},
+      {:z, -1}
+    ]
+  end
+
+  defp exposed?({dir, _delta} = vector, {x, y, z} = coordinate, set, min, max) do
+    value = project(dir, coordinate)
+
+    cond do
+      value < project(dir, min) or value > project(dir, max) -> true
+      {x, y, z} in set -> false
+      true -> exposed?(vector, add_vector(vector, coordinate), set, min, max)
+    end
+  end
+
+  defp add_vector({:x, delta}, {x, y, z}), do: {x + delta, y, z}
+  defp add_vector({:y, delta}, {x, y, z}), do: {x, y +  delta, z}
+  defp add_vector({:z, delta}, {x, y, z}), do: {x, y, z + delta}
 end
